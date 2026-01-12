@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+langchain
+langgraph
+neo4j
+psycopg
+redis
+pydantic
