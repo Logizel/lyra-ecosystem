@@ -7,3 +7,37 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+    depends_on:
+    - postgres
+    - redis
+    - neo4j
+    
+  postgres:
+    image: postgres:16
+    environment:
+        POSTGRES_USER: lyra
+        POSTGRES_PASSWORD: lyra
+        POSTGRES_DB: lyra
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  neo4j:
+    image: neo4j:5
+    environment:
+      NEO4J_AUTH: neo4j/password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  postgres_data:
+  neo4j_data:
