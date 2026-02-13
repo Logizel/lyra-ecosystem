@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: lyra_postgres
+    environment:
+      POSTGRES_DB: lyra
+      POSTGRES_USER: lyra
+      POSTGRES_PASSWORD: lyra_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lyra"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Neo4j Graph Database
+  neo4j:
+    image: neo4j:5-community
+    container_name: lyra_neo4j
+    environment:
+      NEO4J_AUTH: neo4j/lyra_password
+      NEO4J_PLUGINS: '["apoc"]'
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD", "neo4j", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: lyra_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # MinIO for file storage (S3 alternative)
+  minio:
+    image: minio/minio:latest
+    container_name: lyra_minio
+    environment:
+      MINIO_ROOT_USER: lyra
+      MINIO_ROOT_PASSWORD: lyra_password
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # vLLM for local LLM serving (optional for now)
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: lyra_vllm
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL: mistralai/Mistral-7B-Instruct-v0.2
+    volumes:
+      - vllm_cache:/root/.cache/huggingface
+    command: >
+      --model mistralai/Mistral-7B-Instruct-v0.2
+      --served-model-name researcher
+      --port 8000
+      --host 0.0.0.0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    # Remove if you don't have GPU
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  neo4j_logs:
+  redis_data:
+  minio_data:
+  vllm_cache:
+
+networks:
+  default:
+    name: lyra_network
