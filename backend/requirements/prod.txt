@@ -3,6 +3,7 @@ uvicorn[standard]
 langchain
 langgraph
 neo4j
-psycopg
+psycopg[binary]
 redis
 pydantic
+alembic
