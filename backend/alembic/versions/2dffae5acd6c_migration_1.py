@@ -52,12 +52,11 @@ def upgrade() -> None:
         sa.Column("updated_at",sa.DateTime,nullable=True),
         sa.Column("settings",sa.Boolean,nullable=True),
     )
- 
     pass
 
 
 def downgrade() -> None:
     op.drop_table("users")
     op.drop_table("api_keys")
-    drop_table("projects")
+    op.drop_table("projects")
     pass

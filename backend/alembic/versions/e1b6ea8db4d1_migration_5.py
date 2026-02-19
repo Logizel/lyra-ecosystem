@@ -9,6 +9,8 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
+
 
 
 # revision identifiers, used by Alembic.
@@ -19,10 +21,33 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema."""
+    op.create_table(
+    "task_nodes",
+    sa.Column("id",sa.String,primary_key=True),
+    sa.Column("task_graph_id",sa.String,sa.ForeignKey("users.id"),nullable=False),
+    sa.Column("title",sa.String,nullable=True),
+    sa.Column("description",sa.String,nullable=True),
+    sa.Column("status",sa.String,nullable=True),
+    sa.Column("order_index",sa.Integer,nullable=True),
+    sa.Column("input_schema",JSONB,nullable=True),
+    sa.Column("output_schema",JSONB,nullable=True),
+    sa.Column("started_at",sa.DateTime,nullable=True),
+    sa.Column("completed_at",sa.DateTime,nullable=True),
+    )
+    op.create_table(
+    "task_graph",
+    sa.Column("id",sa.String,primary_key=True),
+    sa.Column("project_id",sa.String,sa.ForeignKey("users.id"),nullable=False),
+    sa.Column("created_at",sa.DateTime,nullable=True),
+    sa.Column("updated_at",sa.DateTime,nullable=True),
+    sa.Column("status",sa.String,nullable=True),
+    sa.Column("metadata",JSONB,nullable=True)
+    )
     pass
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
+    op.drop_table("task_nodes")
+    op.drop_table("task_graph")
+ 
     pass

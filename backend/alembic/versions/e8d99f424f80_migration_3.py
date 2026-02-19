@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
 revision: str = 'e8d99f424f80'
@@ -19,10 +19,31 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema."""
+    op.create_table(
+    "conversations",
+    sa.Column("id",sa.String,primary_key=True),
+    sa.Column("user_id",sa.String,sa.ForeignKey("users.id"),nullable=False),
+    sa.Column("project_id",sa.String,sa.ForeignKey("project.id"),nullable=False),
+    sa.Column("title",sa.String,nullable=True),
+    sa.Column("created_at",sa.DateTime,nullable=True),
+    sa.Column("updated_at",sa.DateTime,nullable=True),
+    sa.Column("context",JSONB,nullable=True), 
+    sa.Column("status",sa.Integer,nullable=True),
+    )     
     pass
 
 
 def downgrade() -> None:
-    """Downgrade schema."""
+    op.create_table(
+    "messages",
+    sa.Column("id",sa.String,primary_key=True),
+    sa.Column("conversation_id",sa.String,sa.ForeignKey("users.id"),nullable=False),
+    sa.Column("role",sa.String,nullable=True),
+    sa.Column("context",sa.String,nullable=True),
+    sa.Column("tokens_used",sa.Integer,nullable=True),
+    sa.Column("model_used",sa.String,nullable=True),
+    sa.Column("created_at",sa.DateTime,nullable=True),
+    sa.Column("metadata",JSONB,nullable=True)    
+    )     
+ 
     pass

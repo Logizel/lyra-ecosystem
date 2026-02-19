@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from some_vector_extension import Vector
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
@@ -20,6 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    op.create_table(
     "documents",
     sa.Column("id",sa.String,primary_key=True),
     sa.Column("user_id",sa.String,sa.ForeignKey("users.id"),nullable=False),
@@ -28,14 +29,11 @@ def upgrade() -> None:
     sa.Column("mime_type",sa.String,nullable=True),
     sa.Column("uploaded_at",sa.DateTime,nullable=True),
     sa.Column("processed_at",sa.DateTime,nullable=True),
-    sa.Column("metadata",JSONB,nullable=True)    
+    sa.Column("metadata",JSONB,nullable=True), 
     sa.Column("total_chunks",sa.Integer,nullable=True),
-    )     
-    pass
-
-
-def downgrade() -> None:
-    "documents",
+    )   
+    op.create_table(
+    "document_chunks",
     sa.Column("id",sa.String,primary_key=True),
     sa.Column("document_id",sa.String,sa.ForeignKey("users.id"),nullable=False),
     sa.Column("chunk_index",sa.Integer,nullable=True),
@@ -43,4 +41,10 @@ def downgrade() -> None:
     sa.Column("token_count",sa.Integer,nullable=True),
     sa.Column("metadata",JSONB,nullable=True)    
     )     
+    pass
+
+
+def downgrade() -> None:
+    op.drop_table("documents")
+    op.drop_table("document_chunks")
     pass
