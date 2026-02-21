@@ -1,50 +1,44 @@
-"""Migration 2
+"""Migration 2"""
 
-Revision ID: e37b8a149260
-Revises: 2dffae5acd6c
-Create Date: 2026-02-14 02:09:33.429773
-
-"""
 from typing import Sequence, Union
-
 from alembic import op
 import sqlalchemy as sa
 from pgvector.sqlalchemy import Vector
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+import uuid
 
-# revision identifiers, used by Alembic.
-revision: str = 'e37b8a149260'
-down_revision: Union[str, Sequence[str], None] = '2dffae5acd6c'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "e37b8a149260"
+down_revision = "2dffae5acd6c"
+branch_labels = None
+depends_on = None
 
 
 def upgrade() -> None:
+    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
     op.create_table(
-    "documents",
-    sa.Column("id",sa.String,primary_key=True),
-    sa.Column("user_id",sa.String,sa.ForeignKey("users.id"),nullable=False),
-    sa.Column("project_id",sa.String,sa.ForeignKey("project.id"),nullable=False),
-    sa.Column("s3_path",sa.String,nullable=True),
-    sa.Column("mime_type",sa.String,nullable=True),
-    sa.Column("uploaded_at",sa.DateTime,nullable=True),
-    sa.Column("processed_at",sa.DateTime,nullable=True),
-    sa.Column("metadata",JSONB,nullable=True), 
-    sa.Column("total_chunks",sa.Integer,nullable=True),
-    )   
+        "documents",
+        sa.Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+        sa.Column("project_id", UUID(as_uuid=True), sa.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("s3_path", sa.String),
+        sa.Column("mime_type", sa.String),
+        sa.Column("uploaded_at", sa.DateTime(timezone=True)),
+        sa.Column("processed_at", sa.DateTime(timezone=True)),
+        sa.Column("metadata", JSONB),
+        sa.Column("total_chunks", sa.Integer),
+    )
+
     op.create_table(
-    "document_chunks",
-    sa.Column("id",sa.String,primary_key=True),
-    sa.Column("document_id",sa.String,sa.ForeignKey("users.id"),nullable=False),
-    sa.Column("chunk_index",sa.Integer,nullable=True),
-    sa.Column("embedding",Vector(3, float32),nullable=True),
-    sa.Column("token_count",sa.Integer,nullable=True),
-    sa.Column("metadata",JSONB,nullable=True)    
-    )     
-    pass
+        "document_chunks",
+        sa.Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+        sa.Column("document_id", UUID(as_uuid=True), sa.ForeignKey("documents.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("chunk_index", sa.Integer),
+        sa.Column("embedding", Vector(1536)),  # typical OpenAI size
+        sa.Column("token_count", sa.Integer),
+        sa.Column("metadata", JSONB),
+    )
 
 
 def downgrade() -> None:
-    op.drop_table("documents")
     op.drop_table("document_chunks")
-    pass
+    op.drop_table("documents")

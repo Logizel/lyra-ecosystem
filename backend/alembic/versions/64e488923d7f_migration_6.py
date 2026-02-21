@@ -1,47 +1,40 @@
-"""Migration 6
+"""Migration 6"""
 
-Revision ID: 64e488923d7f
-Revises: e1b6ea8db4d1
-Create Date: 2026-02-14 02:09:56.330227
-
-"""
 from typing import Sequence, Union
-
 from alembic import op
 import sqlalchemy as sa
 from pgvector.sqlalchemy import Vector
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+import uuid
 
-# revision identifiers, used by Alembic.
-revision: str = '64e488923d7f'
-down_revision: Union[str, Sequence[str], None] = 'e1b6ea8db4d1'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "64e488923d7f"
+down_revision = "e1b6ea8db4d1"
+branch_labels = None
+depends_on = None
 
 
 def upgrade() -> None:
     op.create_table(
-    "knowledge_nodes",
-    sa.Column("id",sa.String,primary_key=True),
-    sa.Column("source_type",sa.String,sa.ForeignKey("users.id"),nullable=False),
-    sa.Column("content",sa.String,nullable=True),
-    sa.Column("metadata",JSONB,nullable=True),
-    sa.Column("embedding", Vector(3), nullable=True),
-    sa.Column("created_at",sa.DateTime,nullable=True),
+        "knowledge_nodes",
+        sa.Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+        sa.Column("project_id", UUID(as_uuid=True), sa.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("content", sa.Text),
+        sa.Column("metadata", JSONB),
+        sa.Column("embedding", Vector(1536)),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
+
     op.create_table(
-    "ideas",
-    sa.Column("id",sa.String,primary_key=True),
-    sa.Column("content",sa.String,nullable=True),
-    sa.Column("created_by",sa.String,nullable=True),
-    sa.Column("confidence",sa.Float, nullable=True),
-    sa.Column("supporting_evidence",JSONB,nullable=True),
-    sa.Column("created_at",sa.DateTime,nullable=True),
+        "ideas",
+        sa.Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+        sa.Column("content", sa.Text),
+        sa.Column("created_by", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="SET NULL")),
+        sa.Column("confidence", sa.Float),
+        sa.Column("supporting_evidence", JSONB),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
-    pass
 
 
 def downgrade() -> None:
-    op.drop_table("knowledge_nodes")
     op.drop_table("ideas")
-    pass
+    op.drop_table("knowledge_nodes")
