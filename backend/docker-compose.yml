@@ -1,6 +1,21 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  backend:
+    build:
+      context: ./backend
+    container_name: lyra_backend
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/scripts:/app/scripts
+    depends_on:
+      - postgres
+      - redis
+      - neo4j
+      - minio
+    command: tail -f /dev/null
   # PostgreSQL with pgvector
   postgres:
     image: pgvector/pgvector:pg16
@@ -28,8 +43,8 @@ services:
       NEO4J_AUTH: neo4j/lyra_password
       NEO4J_PLUGINS: '["apoc"]'
     ports:
-      - "7474:7474"  # HTTP
-      - "7687:7687"  # Bolt
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
@@ -62,8 +77,8 @@ services:
       MINIO_ROOT_USER: lyra
       MINIO_ROOT_PASSWORD: lyra_password
     ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console
+      - "9000:9000" # API
+      - "9001:9001" # Console
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"

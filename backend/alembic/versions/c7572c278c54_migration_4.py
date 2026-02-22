@@ -4,7 +4,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-import uuid
+from sqlalchemy import text
 
 revision: str = "c7572c278c54"
 down_revision = "e8d99f424f80"
@@ -15,7 +15,12 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "agents",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+        sa.Column(
+            "id",
+            UUID(as_uuid=True),
+            primary_key=True,
+            server_default=text("gen_random_uuid()"),
+        ),
         sa.Column("model_name", sa.String(255), nullable=False),
         sa.Column("version", sa.String(50)),
         sa.Column("last_updated", sa.DateTime(timezone=True)),
@@ -24,9 +29,24 @@ def upgrade() -> None:
 
     op.create_table(
         "agent_runs",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-        sa.Column("conversation_id", UUID(as_uuid=True), sa.ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("agent_id", UUID(as_uuid=True), sa.ForeignKey("agents.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "id",
+            UUID(as_uuid=True),
+            primary_key=True,
+            server_default=text("gen_random_uuid()"),
+        ),
+        sa.Column(
+            "conversation_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("conversations.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column(
+            "agent_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("agents.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("input_data", JSONB),
         sa.Column("output_data", JSONB),
         sa.Column("tokens_used", sa.Integer),
@@ -39,11 +59,28 @@ def upgrade() -> None:
 
     op.create_table(
         "agent_feedback",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-        sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("agent_run_id", UUID(as_uuid=True), sa.ForeignKey("agent_runs.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "id",
+            UUID(as_uuid=True),
+            primary_key=True,
+            server_default=text("gen_random_uuid()"),
+        ),
+        sa.Column(
+            "user_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column(
+            "agent_run_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("agent_runs.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("rating", sa.Integer),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
+        ),
         sa.Column("feedback_text", sa.Text),
     )
 
