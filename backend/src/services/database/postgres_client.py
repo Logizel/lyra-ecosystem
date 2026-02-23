@@ -1,14 +1,22 @@
 import os
-
+import sys
 from contextlib import contextmanager
+from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import IntegrityError
 
-from typing import Iterator
-from models.database.user import User
+from typing import Iterator, Optional
 from dotenv import load_dotenv
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from models.database.user import User
+from api.auth.authentication import (
+    hash_password,
+    verify_password,
+)
 
 load_dotenv()
 
@@ -40,8 +48,10 @@ class PostgresClient:
         finally:
             session.close()
 
-    def create_user(self, email: str, hashed_password: str) -> User:
+    def create_user(self, email: str, plain_password: str) -> User:
+        """Create user with automatic password hashing."""
         with self.get_session() as session:
+            hashed_password = hash_password(plain_password)
             user = User(email=email, hashed_password=hashed_password)
             session.add(user)
 
@@ -56,3 +66,13 @@ class PostgresClient:
     def get_user_by_email(self, email: str) -> "User | None":
         with self.get_session() as session:
             return session.query(User).filter(User.email == email).first()
+
+    def authenticate_user(self, email: str, plain_password: str) -> Optional[User]:
+        """Verify credentials and return user if valid."""
+        with self.get_session() as session:
+            user = session.query(User).filter(User.email == email).first()
+            if not user:
+                return None
+            if not verify_password(plain_password, user.hashed_password):
+                return None
+            return user
