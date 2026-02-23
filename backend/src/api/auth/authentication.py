@@ -1,14 +1,20 @@
 import os
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from dotenv import load_dotenv
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-SECRET_KEY = os.getenv("JWT_SECRET", "your-secret-key-change-this-in-production")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+env_path = Path(__file__).parents[4] / ".env"
+load_dotenv(dotenv_path=env_path)
+
+SECRET_KEY = os.environ["JWT_SECRET"]
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "30"))
 
 ph = PasswordHasher()
 

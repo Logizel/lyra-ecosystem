@@ -32,7 +32,6 @@ class PostgresClient:
             bind=self.engine,
         )
 
-    # Methods should be at class level, NOT inside __init__
     @contextmanager
     def get_session(self) -> Iterator[Session]:
         session = self.SessionLocal()
