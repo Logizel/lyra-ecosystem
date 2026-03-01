@@ -9,3 +9,11 @@ pydantic
 alembic
 pgvector
 asyncpg
+argon2-cffi>=21.0.0
+python-jose[cryptography]>=3.3.0
+python-dotenv>=1.0.0
+sqlalchemy>=2.0.0
+psycopg>=3.0.0
+pydantic>=2.0.0
+pydantic[email]>=2.0.0
+passlib[bcrypt]>=1.7.4
