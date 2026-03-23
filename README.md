@@ -1,6 +1,6 @@
 # Lyra Ecosystem
 
-A multi-agent AI research assistant. Four specialized agents — Researcher, Engineer, Planner, and Critic — work together to handle complex research and coding tasks from start to finish.
+A multi-agent AI research assistant. Four specialized agents - Researcher, Engineer, Planner, and Critic - work together to handle complex research and coding tasks from start to finish.
 
 ---
 
@@ -51,16 +51,16 @@ User Query
 - Temporal (long-running workflow execution)
 
 **Databases**
-- PostgreSQL — main database
-- pgvector — vector search for RAG
-- Neo4j — task and agent relationship graphs
-- Redis — caching and queues
-- MinIO / S3 — file storage
+- PostgreSQL - main database
+- pgvector - vector search for RAG
+- Neo4j - task and agent relationship graphs
+- Redis - caching and queues
+- MinIO / S3 - file storage
 
 **Model serving**
-- vLLM — runs open-weight models
-- Ollama — local dev setup
-- Docker-in-Docker + gVisor — sandboxed code execution
+- vLLM - runs open-weight models
+- Ollama - local dev setup
+- Docker-in-Docker + gVisor - sandboxed code execution
 
 ---
 
@@ -137,14 +137,14 @@ ollama pull llama3.2:3b
 
 ## Roadmap
 
-- [x] Phase 1 — Docker setup, FastAPI skeleton, React shell, DB schema
-- [x] Phase 2 — Auth: register, login, JWT, protected routes
-- [ ] Phase 3 — Document upload, MinIO storage, PDF text extraction
-- [ ] Phase 4 — RAG: chunking, pgvector, Researcher agent
-- [ ] Phase 5 — BrainHub UI, WebSocket integration, chat interface
-- [ ] Phase 6 — Engineer, Planner, Critic agents
-- [ ] Phase 7 — Multi-agent orchestration with LangGraph
-- [ ] Phase 8 — Infrastructure: Kubernetes, Terraform, monitoring
+- [x] Phase 1 - Docker setup, FastAPI skeleton, React shell, DB schema
+- [x] Phase 2 - Auth: register, login, JWT, protected routes
+- [ ] Phase 3 - Document upload, MinIO storage, PDF text extraction
+- [ ] Phase 4 - RAG: chunking, pgvector, Researcher agent
+- [ ] Phase 5 - BrainHub UI, WebSocket integration, chat interface
+- [ ] Phase 6 - Engineer, Planner, Critic agents
+- [ ] Phase 7 - Multi-agent orchestration with LangGraph
+- [ ] Phase 8 - Infrastructure: Kubernetes, Terraform, monitoring
 
 ---
 
