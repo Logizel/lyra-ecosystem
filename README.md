@@ -1,196 +1,153 @@
-# 🧠 Lyra Ecosystem
+# Lyra Ecosystem
 
-> A multi-agent AI research assistant where specialized agents collaborate to automate complex research and engineering workflows.
-
-![Status](https://img.shields.io/badge/status-in%20development-yellow)
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Python](https://img.shields.io/badge/python-3.11+-green)
-![TypeScript](https://img.shields.io/badge/typescript-5.0+-blue)
+A multi-agent AI research assistant. Four specialized agents — Researcher, Engineer, Planner, and Critic — work together to handle complex research and coding tasks from start to finish.
 
 ---
 
-## What is Lyra?
+## What it does
 
-Lyra mimics a human research team. Four specialized agents — **Researcher**, **Engineer**, **Planner**, and **Critic** — work together inside a shared reasoning space called the **BrainHub**. Users can upload documents, ask complex questions, and watch agents think, debate, and refine answers in real time.
+You upload a document or ask a question. Lyra figures out what needs to happen, splits the work across agents, and streams the result back to you live. You can watch the agents' reasoning unfold in a visual graph called the BrainHub.
 
 ```
 User Query
-    │
-    ▼
-┌─────────────────────────────────────┐
-│              BrainHub               │
-│                                     │
-│  Planner ──► Researcher ──► Critic  │
-│      └──────► Engineer  ──────┘     │
-└─────────────────────────────────────┘
-    │
-    ▼
-Streamed Answer + Visual Graph
+    |
+    v
+[ Planner ] --> breaks the task into steps
+    |
+    +--> [ Researcher ] --> finds relevant info from your documents
+    +--> [ Engineer ]   --> writes and runs code in a sandbox
+    |
+    v
+[ Critic ] --> checks everything before the final answer
 ```
 
 ---
 
 ## Agents
 
-| Agent | Model | Role |
-|---|---|---|
-| **Researcher** | LLaMA-3.1-70B | Retrieves & summarizes info via RAG |
-| **Engineer** | DeepSeek Coder V2.5 | Writes & executes code in a sandbox |
-| **Planner** | Qwen-2.5-72B | Decomposes goals into task graphs |
-| **Critic** | Qwen-2.5-72B | Validates logic, facts, and code quality |
+| Agent      | Model               | Job                                   |
+|------------|---------------------|---------------------------------------|
+| Researcher | LLaMA-3.1-70B       | Finds and summarizes info using RAG   |
+| Engineer   | DeepSeek Coder V2.5 | Writes and executes code              |
+| Planner    | Qwen-2.5-72B        | Breaks goals into a step-by-step plan |
+| Critic     | Qwen-2.5-72B        | Reviews outputs for errors and quality|
 
 ---
 
-## Tech Stack
+## Tech stack
 
 **Frontend**
 - React 18 + TypeScript + Vite
-- Tailwind CSS for styling
-- React Flow for BrainHub visualization
-- Zustand for state management
-- Native WebSockets for real-time updates
+- Tailwind CSS
+- React Flow (for the BrainHub graph)
+- Zustand (state management)
+- Native WebSockets (real-time agent updates)
 
 **Backend**
-- FastAPI + Uvicorn (async, high-performance)
-- JWT authentication (python-jose + passlib)
-- Celery + Redis for background task queues
-- LangChain / LangGraph for agent orchestration
-- Temporal for durable workflow execution
+- FastAPI + Uvicorn
+- JWT auth (python-jose + passlib)
+- Celery + Redis (background jobs)
+- LangChain / LangGraph (agent logic)
+- Temporal (long-running workflow execution)
 
-**Data**
-- PostgreSQL 15+ (primary DB)
-- pgvector extension (semantic search / RAG)
-- Neo4j (task dependency graphs)
-- Redis (caching, queues, pub/sub)
-- MinIO / AWS S3 (document storage)
+**Databases**
+- PostgreSQL — main database
+- pgvector — vector search for RAG
+- Neo4j — task and agent relationship graphs
+- Redis — caching and queues
+- MinIO / S3 — file storage
 
-**Model Serving**
-- vLLM for open-weight model inference
-- Ollama for local development
-- Docker-in-Docker + gVisor for sandboxed code execution
+**Model serving**
+- vLLM — runs open-weight models
+- Ollama — local dev setup
+- Docker-in-Docker + gVisor — sandboxed code execution
 
 ---
 
-## Project Structure
+## Folder structure
 
 ```
 lyra-ecosystem/
 ├── backend/
 │   └── src/
-│       ├── api/              # FastAPI routes (auth, chat, documents, agents)
-│       ├── services/         # DB clients, file storage, PDF extractor
-│       └── orchestration/    # LangChain agents, prompts, agent manager
+│       ├── api/              # routes: auth, chat, documents, agents
+│       ├── services/         # DB, file storage, PDF extraction
+│       └── orchestration/    # agents, prompts, workflow manager
 ├── frontend/
 │   └── src/
-│       ├── components/       # BrainHub, ChatInterface, file upload
-│       ├── services/         # API client, WebSocket service
-│       └── store/            # Zustand state
-├── ml_models/                # Model configs and serving setup
-├── infrastructure/           # Terraform, Kubernetes manifests
-├── monitoring/               # Prometheus, Grafana configs
-├── ci_cd/                    # GitHub Actions workflows
+│       ├── components/       # BrainHub, chat UI, file upload
+│       ├── services/         # API calls, WebSocket connection
+│       └── store/            # global state
+├── ml_models/
+├── infrastructure/           # Terraform, Kubernetes
+├── monitoring/               # Prometheus, Grafana
+├── ci_cd/
 ├── docker-compose.yml
-├── docker-compose.override.yml
 ├── Makefile
 └── alembic/                  # DB migrations
 ```
 
 ---
 
-## Getting Started
+## Running locally
 
-### Prerequisites
-
-- Docker + Docker Compose
-- Node.js 18+
-- Python 3.11+
-- Ollama (for local model serving)
-
-### 1. Clone the repo
+**Prerequisites:** Docker, Node.js 18+, Python 3.11+, Ollama (optional)
 
 ```bash
+# 1. Clone
 git clone https://github.com/Logizel/lyra-ecosystem.git
 cd lyra-ecosystem
-```
 
-### 2. Set up environment variables
-
-```bash
+# 2. Environment variables
 cp backend/.env.example backend/.env
-# Edit .env — fill in DB credentials, JWT secret, S3 keys
-```
+# fill in DB credentials, JWT secret, storage keys
 
-### 3. Start all services
-
-```bash
+# 3. Start databases
 docker-compose up -d
-# Starts: PostgreSQL, Redis, Neo4j, MinIO
-```
 
-### 4. Run DB migrations
+# 4. Run migrations
+cd backend && alembic upgrade head
 
-```bash
-cd backend
-alembic upgrade head
-```
-
-### 5. Start the backend
-
-```bash
-cd backend
+# 5. Start backend
 pip install -r requirements.txt
 uvicorn src.main:app --reload --port 8000
-```
 
-### 6. Start the frontend
+# 6. Start frontend
+cd frontend && npm install && npm run dev
+# open http://localhost:5173
 
-```bash
-cd frontend
-npm install
-npm run dev
-# Visit http://localhost:5173
-```
-
-### 7. Pull a local model (optional, for dev)
-
-```bash
+# 7. Pull a local model (optional)
 ollama pull llama3.2:3b
 ```
 
 ---
 
-## API Endpoints
+## API
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/auth/register` | Create account |
-| `POST` | `/api/auth/login` | Login, returns JWT |
-| `POST` | `/api/documents/upload` | Upload PDF |
-| `POST` | `/api/agent/research` | Ask the Researcher agent |
-| `WS` | `/ws` | Real-time BrainHub updates |
-
----
-
-## Development Roadmap
-
-- [x] Phase 1 — Foundation (Docker, FastAPI, React shell, DB schema)
-- [x] Phase 2 — Auth pipeline (JWT, register/login, protected routes)
-- [ ] Phase 3 — Document ingestion (upload, MinIO, PDF extraction)
-- [ ] Phase 4 — RAG pipeline (chunking, pgvector, Researcher agent)
-- [ ] Phase 5 — BrainHub UI (React Flow, WebSocket integration)
-- [ ] Phase 6 — Remaining agents (Engineer, Planner, Critic)
-- [ ] Phase 7 — Multi-agent orchestration (LangGraph workflows)
-- [ ] Phase 8 — Infrastructure (Kubernetes, Terraform, monitoring)
+| Method | Endpoint              | Description                |
+|--------|-----------------------|----------------------------|
+| GET    | /health               | Health check               |
+| POST   | /api/auth/register    | Create an account          |
+| POST   | /api/auth/login       | Login, returns JWT         |
+| POST   | /api/documents/upload | Upload a PDF               |
+| POST   | /api/agent/research   | Ask the Researcher agent   |
+| WS     | /ws                   | Real-time BrainHub updates |
 
 ---
 
-## Contributing
+## Roadmap
 
-This is a learning project built in public. PRs and issues are welcome — especially if you find something broken or a simpler way to do something.
+- [x] Phase 1 — Docker setup, FastAPI skeleton, React shell, DB schema
+- [x] Phase 2 — Auth: register, login, JWT, protected routes
+- [ ] Phase 3 — Document upload, MinIO storage, PDF text extraction
+- [ ] Phase 4 — RAG: chunking, pgvector, Researcher agent
+- [ ] Phase 5 — BrainHub UI, WebSocket integration, chat interface
+- [ ] Phase 6 — Engineer, Planner, Critic agents
+- [ ] Phase 7 — Multi-agent orchestration with LangGraph
+- [ ] Phase 8 — Infrastructure: Kubernetes, Terraform, monitoring
 
 ---
 
 ## License
 
-MIT — see [LICENSE](./LICENSE)
+MIT
