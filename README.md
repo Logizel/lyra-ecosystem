@@ -1,152 +1,62 @@
 # Lyra Ecosystem
 
-A multi-agent AI research assistant. Four specialized agents - Researcher, Engineer, Planner, and Critic - work together to handle complex research and coding tasks from start to finish.
+A highly scalable, multi-agent artificial intelligence research and engineering assistant. Lyra orchestrates four specialized agents (Researcher, Engineer, Planner, and Critic) to execute complex, multi-step tasks.
+
+Built for enterprise-scale from day one, Lyra features an asynchronous event-driven architecture. It completely decouples agent logic from network connections. This design allows independent scaling and fault tolerance while using a federated model strategy to maximize throughput on free-tier interfaces.
 
 ---
 
-## What it does
+## Agent Federation Strategy
 
-You upload a document or ask a question. Lyra figures out what needs to happen, splits the work across agents, and streams the result back to you live. You can watch the agents' reasoning unfold in a visual graph called the BrainHub.
+To avoid rate limits while maintaining high performance, Lyra assigns specific agents to dedicated application programming interfaces.
 
-```
-User Query
-    |
-    v
-[ Planner ] --> breaks the task into steps
-    |
-    +--> [ Researcher ] --> finds relevant info from your documents
-    +--> [ Engineer ]   --> writes and runs code in a sandbox
-    |
-    v
-[ Critic ] --> checks everything before the final answer
-```
+*   **Planner:** `gpt-oss-120b` via Cerebras. Breaks down tasks with high reasoning capability at fast speeds without exhausting primary rate limits.
+*   **Researcher:** `DeepSeek V4 Flash` via OpenRouter. Uses its massive context window to process large documents and run complex data retrieval pipelines.
+*   **Engineer:** `MiniMax M2.5` via OpenRouter. Excels at autonomous coding and tool usage within the execution sandbox.
+*   **Critic:** `Llama 3.3 70B` via Groq. Delivers rapid reviews, ensuring the final quality check does not delay the final output.
 
 ---
 
-## Agents
+## Architecture and Technology Stack
 
-| Agent      | Model               | Job                                   |
-|------------|---------------------|---------------------------------------|
-| Researcher | LLaMA-3.1-70B       | Finds and summarizes info using RAG   |
-| Engineer   | DeepSeek Coder V2.5 | Writes and executes code              |
-| Planner    | Qwen-2.5-72B        | Breaks goals into a step-by-step plan |
-| Critic     | Qwen-2.5-72B        | Reviews outputs for errors and quality|
+Lyra separates networking infrastructure from cognitive agent execution using an event-driven message bus.
 
----
-## Tech stack
+### High-Concurrency API Gateway
+*   **Technology:** Go with the Gin framework.
+*   **Role:** Manages authentication, WebSockets, and file uploads. It pushes events to the message broker and handles thousands of persistent connections with minimal memory usage.
 
-**Frontend**
-- React 18 + TypeScript + Vite
-- Tailwind CSS
-- React Flow (for the BrainHub graph)
-- Zustand (state management)
-- Native WebSockets (real-time agent updates)
+### Event-Driven Fabric
+*   **Technology:** Apache Kafka.
+*   **Role:** Decouples agents. The Planner publishes a task, which the Researcher consumes at its own pace. This ensures reliable message delivery and robust retry logic.
 
-**Backend**
-- FastAPI + Uvicorn
-- JWT auth (python-jose + passlib)
-- Celery + Redis (background jobs)
-- LangChain / LangGraph (agent logic)
-- Temporal (long-running workflow execution)
+### Cognitive Microservices
+*   **Technology:** Python, FastAPI, and LangGraph.
+*   **Role:** Each agent runs as an isolated, containerized microservice. This allows independent scaling for resource-heavy agents like the Researcher.
 
-**Databases**
-- PostgreSQL - main database
-- pgvector - vector search for RAG
-- Neo4j - task and agent relationship graphs
-- Redis - caching and queues
-- MinIO / S3 - file storage
+### Code Execution Sandbox
+*   **Technology:** Go, Docker, and gVisor.
+*   **Role:** Provides a strict, kernel-isolated environment for the Engineer agent to safely compile and test generated code.
 
-**Model serving**
-- vLLM - runs open-weight models
-- Ollama - local dev setup
-- Docker-in-Docker + gVisor - sandboxed code execution
+### Unified Data Tier
+*   **Relational and Graph State:** PostgreSQL. Handles agent state checkpointing and user account data.
+*   **Vector Search:** pgvector. A native PostgreSQL extension for storing and querying text embeddings.
+*   **Artifact Storage:** AWS S3. Stores user documents and generated code artifacts.
 
 ---
+Core Event Flow
 
-## Folder structure
+    Ingest: The user submits a prompt via the frontend interface.
 
-```
-lyra-ecosystem/
-├── backend/
-│   └── src/
-│       ├── api/              # routes: auth, chat, documents, agents
-│       ├── services/         # DB, file storage, PDF extraction
-│       └── orchestration/    # agents, prompts, workflow manager
-├── frontend/
-│   └── src/
-│       ├── components/       # BrainHub, chat UI, file upload
-│       ├── services/         # API calls, WebSocket connection
-│       └── store/            # global state
-├── ml_models/
-├── infrastructure/           # Terraform, Kubernetes
-├── monitoring/               # Prometheus, Grafana
-├── ci_cd/
-├── docker-compose.yml
-├── Makefile
-└── alembic/                  # DB migrations
-```
+    Route: The Go API Gateway validates the security token and publishes a task event to Apache Kafka.
 
----
+    Plan: The Planner Agent consumes the event, creates a step-by-step plan, and publishes a research request.
 
-## Running locally
+    Execute: The Researcher and Engineer agents consume their respective tasks. Engineer code is routed to the Go Sandbox worker.
 
-**Prerequisites:** Docker, Node.js 18+, Python 3.11+, Ollama (optional)
+    Review: The Critic Agent consumes the execution outputs and verifies accuracy.
 
-```bash
-# 1. Clone
-git clone https://github.com/Logizel/lyra-ecosystem.git
-cd lyra-ecosystem
+    Stream: The Go Gateway consumes the final completion event and streams the text to the user via WebSockets.
 
-# 2. Environment variables
-cp backend/.env.example backend/.env
-# fill in DB credentials, JWT secret, storage keys
-
-# 3. Start databases
-docker-compose up -d
-
-# 4. Run migrations
-cd backend && alembic upgrade head
-
-# 5. Start backend
-pip install -r requirements.txt
-uvicorn src.main:app --reload --port 8000
-
-# 6. Start frontend
-cd frontend && npm install && npm run dev
-# open http://localhost:5173
-
-# 7. Pull a local model (optional)
-ollama pull llama3.2:3b
-```
-
----
-
-## API
-
-| Method | Endpoint              | Description                |
-|--------|-----------------------|----------------------------|
-| GET    | /health               | Health check               |
-| POST   | /api/auth/register    | Create an account          |
-| POST   | /api/auth/login       | Login, returns JWT         |
-| POST   | /api/documents/upload | Upload a PDF               |
-| POST   | /api/agent/research   | Ask the Researcher agent   |
-| WS     | /ws                   | Real-time BrainHub updates |
-
----
-
-## Roadmap
-
-- [x] Phase 1 - Docker setup, FastAPI skeleton, React shell, DB schema
-- [x] Phase 2 - Auth: register, login, JWT, protected routes
-- [ ] Phase 3 - Document upload, MinIO storage, PDF text extraction
-- [ ] Phase 4 - RAG: chunking, pgvector, Researcher agent
-- [ ] Phase 5 - BrainHub UI, WebSocket integration, chat interface
-- [ ] Phase 6 - Engineer, Planner, Critic agents
-- [ ] Phase 7 - Multi-agent orchestration with LangGraph
-- [ ] Phase 8 - Infrastructure: Kubernetes, Terraform, monitoring
-
----
-
-## License
+License
 
 MIT
