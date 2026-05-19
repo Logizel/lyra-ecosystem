@@ -43,7 +43,7 @@ Lyra separates networking infrastructure from cognitive agent execution using an
 *   **Artifact Storage:** AWS S3. Stores user documents and generated code artifacts.
 
 ---
-Core Event Flow
+### Core Event Flow
 
     Ingest: The user submits a prompt via the frontend interface.
 
